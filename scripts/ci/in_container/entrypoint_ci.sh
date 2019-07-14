@@ -30,6 +30,8 @@ fi
 
 assert_in_container
 
+cleanup_pyc
+
 output_verbose_start
 
 AIRFLOW_ROOT="${MY_DIR}/../../.."
@@ -58,9 +60,7 @@ ARGS=( "$@" )
 
 RUN_TESTS=${RUN_TESTS:="true"}
 
-CLEAN_FILES=${CLEAN_FILES:="false"}
-
-if [[ ! -d "${AIRFLOW_SOURCES}/airflow/www/node_modules" && "${CLEAN_FILES}" == "false" ]]; then
+if [[ ! -d "${AIRFLOW_SOURCES}/airflow/www/node_modules" ]]; then
     echo
     echo "Installing NPM modules as they are not yet installed (Sources mounted from Host)"
     echo
@@ -69,7 +69,7 @@ if [[ ! -d "${AIRFLOW_SOURCES}/airflow/www/node_modules" && "${CLEAN_FILES}" == 
     echo
     popd &>/dev/null || exit 1
 fi
-if [[ ! -d "${AIRFLOW_SOURCES}/airflow/www/static/dist" && ${CLEAN_FILES} == "false" ]]; then
+if [[ ! -d "${AIRFLOW_SOURCES}/airflow/www/static/dist" ]]; then
     pushd "${AIRFLOW_SOURCES}/airflow/www/" &>/dev/null || exit 1
     echo
     echo "Building production version of javascript files (Sources mounted from Host)"
@@ -91,6 +91,13 @@ export AIRFLOW__CORE__DAGS_FOLDER="${AIRFLOW_SOURCES}/tests/dags"
 
 # add test/test_utils to PYTHONPATH (TODO: Do we need it?)
 export PYTHONPATH=${PYTHONPATH:-${AIRFLOW_SOURCES}/tests/test_utils}
+
+# Added to have run-tests on path
+export PATH=${PATH}:${AIRFLOW_SOURCES}
+
+# Disable writing .pyc files - slightly slower imports but not messing around when switching
+# Python version
+export PYTHONDONTWRITEBYTECODE="true"
 
 export AIRFLOW__CORE__UNIT_TEST_MODE=True
 export HADOOP_DISTRO

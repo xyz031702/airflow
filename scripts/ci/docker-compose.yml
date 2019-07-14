@@ -76,7 +76,6 @@ services:
       - ENV
       - BACKEND
       - CI
-      - CLEAN_FILES
       - SOURCE_BRANCH
       - TRAVIS
       - TRAVIS_BRANCH

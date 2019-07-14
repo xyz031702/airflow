@@ -40,3 +40,23 @@ function output_verbose_end() {
         set +x
     fi
 }
+
+#
+# Cleans up PYC files (in case they come in mounted folders)
+#
+function cleanup_pyc() {
+    echo
+    echo "Cleaning up .pyc files"
+    echo
+    set +o pipefail
+    sudo find . \
+        -path "./airflow/www/node_modules" -prune -o \
+        -path "./.eggs" -prune -o \
+        -path "./docs/_build" -prune -o \
+        -path "./build" -prune -o \
+        -name "*.pyc" | grep ".pyc$" | sudo xargs rm -vf | wc -l | \
+        xargs -n 1 echo "Number of deleted .pyc files:"
+    set -o pipefail
+    echo
+    echo
+}
