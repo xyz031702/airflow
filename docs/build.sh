@@ -23,20 +23,38 @@ set -euo pipefail
 MY_DIR="$(cd "$(dirname "$0")" && pwd)"
 pushd "${MY_DIR}" &>/dev/null || exit 1
 
+echo
+echo "Working in ${MY_DIR} folder"
+echo
+
+
 if [[ -f /.dockerenv ]]; then
-    # We are inside the container which means that we should fix permissions of the _build folder files
-    # Those files are mounted from the host!
-    echo "Changing ownership of docs/_build folder to ${AIRFLOW_USER}:${AIRFLOW_USER}"
+    # This script can be run both - in container and outside of it.
+    # Here we are inside the container which means that we should (when the host is Linux)
+    # fix permissions of the _build and _api folders via sudo.
+    # Those files are mounted from the host via docs folder and we might not have permissions to
+    # write to those directories (and remove the _api folder).
+    # We know we have sudo capabilities inside the container.
+    echo "Creating the _build and _api folders in case they do not exist"
     sudo mkdir -pv _build
-    sudo chown -R ${AIRFLOW_USER}:${AIRFLOW_USER} _build
-    echo "Changed ownership of docs/_build folder to ${AIRFLOW_USER}:${AIRFLOW_USER}"
+    sudo mkdir -pv _api
+    echo "Created the _build and _api folders in case they do not exist"
+    echo "Changing ownership of _build and _api folders to ${AIRFLOW_USER}:${AIRFLOW_USER}"
+    sudo chown -R ${AIRFLOW_USER}:${AIRFLOW_USER} .
+    echo "Changed ownership of the whole doc folder to ${AIRFLOW_USER}:${AIRFLOW_USER}"
+else
+    # We are outside the container so we simply make sure that the directories exist
+    echo "Creating the _build and _api folders in case they do not exist"
+    mkdir -pv _build
+    mkdir -pv _api
+    echo "Creating the _build and _api folders in case they do not exist"
 fi
 
-echo "Removing content of the  _build folder"
+echo "Removing content of the _build and _api folders"
 rm -rf _build/*
-echo "Removed content of the _build folder"
+rm -rf _api/*
+echo "Removed content of the _build and _api folders"
 
-mkdir -pv _build
 
 set +e
 # shellcheck disable=SC2063
@@ -71,11 +89,15 @@ SUCCEED_LINE=$(make html |\
 NUM_CURRENT_WARNINGS=$(echo ${SUCCEED_LINE} |\
     sed -E 's/build succeeded, ([0-9]+) warnings?\./\1/g')
 
-if [[ ${APT_DEPS_IMAGE:=""} != "" ]]; then
-    # We are inside the container which means that we should fix back the permissions of the _build folder files
-    # Those files are mounted from the host!
+if [[  -f /.dockerenv ]]; then
+    # We are inside the container which means that we should fix back the permissions of the
+    # _build and _api folder files, so that they can be accessed by the host user
+    # The _api folder should be deleted by then but just in case we should change the ownership
     echo "Changing ownership of docs/_build folder back to ${HOST_USER_ID}:${HOST_GROUP_ID}"
     sudo chown ${HOST_USER_ID}:${HOST_GROUP_ID} _build
+    if [[ -d _api ]]; then
+        sudo chown ${HOST_USER_ID}:${HOST_GROUP_ID} _api
+    fi
     echo "Changed ownership of docs/_build folder back to ${HOST_USER_ID}:${HOST_GROUP_ID}"
 fi
 
