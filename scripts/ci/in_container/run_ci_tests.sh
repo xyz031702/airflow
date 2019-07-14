@@ -23,12 +23,15 @@ set -euo pipefail
 
 MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 
-if [[ ${AIRFLOW_CI_VERBOSE:="false"} == "true" ]]; then
-    set -x
-fi
+# shellcheck source=./_in_container_utils.sh
+. "${MY_DIR}/_in_container_utils.sh"
 
-# shellcheck source=./_check_in_container.sh
-. "${MY_DIR}/_check_in_container.sh"
+output_verbose_start
+
+# shellcheck source=./_in_container_utils.sh
+. "${MY_DIR}/_in_container_utils.sh"
+
+assert_in_container
 
 # any argument received is overriding the default nose execution arguments:
 NOSE_ARGS=( "$@" )
@@ -71,4 +74,7 @@ if [[ "${RES}" != "0" ]]; then
 else
     echo "All tests successful"
 fi
+
+output_verbose_end
+
 exit "${RES}"

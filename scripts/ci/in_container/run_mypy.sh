@@ -24,8 +24,12 @@ set -uo pipefail
 
 MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 
-# shellcheck source=./_check_in_container.sh
-. "${MY_DIR}/_check_in_container.sh"
+# shellcheck source=./_in_container_utils.sh
+. "${MY_DIR}/_in_container_utils.sh"
+
+assert_in_container
+
+output_verbose_start
 
 pushd "${AIRFLOW_SOURCES}"  &>/dev/null || exit 1
 
@@ -41,8 +45,10 @@ mypy "$@"
 
 RES="$?"
 
-
 popd &>/dev/null || exit 1
+
+output_verbose_end
+
 
 if [[ "${RES}" != 0 ]]; then
     echo >&2

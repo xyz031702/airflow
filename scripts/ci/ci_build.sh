@@ -20,25 +20,16 @@ set -euo pipefail
 
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
-# shellcheck source=./_force_python_3.6.sh
-. "${MY_DIR}"/_force_python_3.6.sh
-# shellcheck source=./_check_coreutils.sh
-. "${MY_DIR}"/_check_coreutils.sh
-# shellcheck source=./_cache_utils.sh
-. "${MY_DIR}"/_cache_utils.sh
-# shellcheck source=./_verbosity_utils.sh
-. "${MY_DIR}"/_verbosity_utils.sh
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
+
+basic_sanity_checks
 
 output_verbose_start
 
-# shellcheck source=./_mounted_volumes_for_static_checks.sh
-. "${MY_DIR}"/_mounted_volumes_for_static_checks.sh
-
 pushd "${MY_DIR}/../../" &>/dev/null || exit 1
-# shellcheck source=./_rebuild_image_if_needed_for_static_checks.sh
-. "${MY_DIR}/_rebuild_image_if_needed_for_static_checks.sh"
+
+rebuild_image_if_needed_for_static_checks
 
 popd &>/dev/null || exit 1
 

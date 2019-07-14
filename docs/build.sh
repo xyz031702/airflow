@@ -40,7 +40,7 @@ if [[ -f /.dockerenv ]]; then
     sudo mkdir -pv _api
     echo "Created the _build and _api folders in case they do not exist"
     echo "Changing ownership of _build and _api folders to ${AIRFLOW_USER}:${AIRFLOW_USER}"
-    sudo chown -R ${AIRFLOW_USER}:${AIRFLOW_USER} .
+    sudo chown -R "${AIRFLOW_USER}:${AIRFLOW_USER}" .
     echo "Changed ownership of the whole doc folder to ${AIRFLOW_USER}:${AIRFLOW_USER}"
 else
     # We are outside the container so we simply make sure that the directories exist

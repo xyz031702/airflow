@@ -25,8 +25,12 @@ if [[ ${AIRFLOW_CI_VERBOSE:="false"} == "true" ]]; then
     set -x
 fi
 
-# shellcheck source=./_check_in_container.sh
-. "${MY_DIR}/_check_in_container.sh"
+# shellcheck source=./_in_container_utils.sh
+. "${MY_DIR}/_in_container_utils.sh"
+
+assert_in_container
+
+output_verbose_start
 
 AIRFLOW_ROOT="${MY_DIR}/../../.."
 
@@ -100,7 +104,7 @@ fi
 
 # Fix file permissions
 if [[ -d "${HOME}/.minikube" ]]; then
-    sudo chown -R airflow.airflow "${HOME}/.kube" "${HOME}/.minikube"
+    sudo chown -R "${AIRFLOW_USER}.${AIRFLOW_USER}" "${HOME}/.kube" "${HOME}/.minikube"
 fi
 
 # Cleanup the logs when entering the environment
@@ -213,3 +217,5 @@ else
     "${MY_DIR}/run_ci_tests.sh" tests.minikube "${ARGS[@]}"
     codecov -e "py${PYTHON_VERSION}-backend_${BACKEND}-env_${ENV}"
 fi
+
+output_verbose_end

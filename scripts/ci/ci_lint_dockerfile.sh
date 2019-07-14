@@ -18,8 +18,10 @@ set -euo pipefail
 
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
+
+assert_not_in_container
 
 pushd "${MY_DIR}/../../" &>/dev/null || exit 1
 

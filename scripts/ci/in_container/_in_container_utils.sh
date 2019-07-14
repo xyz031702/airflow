@@ -17,10 +17,26 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-if [[ -f /.dockerenv ]]; then
-    echo >&2 "You are inside the Airflow docker container!"
-    echo >&2 "You should only run this script from the host."
-    echo >&2 "Learn more about how we develop and test airflow in:"
-    echo >&2 "https://github.com/apache/airflow/blob/master/CONTRIBUTING.md"
-    exit 1
-fi
+function assert_in_container() {
+    if [[ ! -f /.dockerenv ]]; then
+        echo >&2
+        echo >&2 "You are not inside the Airflow docker container!"
+        echo >&2 "You should only run this script in the Airflow docker container as it may override your files."
+        echo >&2 "Learn more about how we develop and test airflow in:"
+        echo >&2 "https://github.com/apache/airflow/blob/master/CONTRIBUTING.md"
+        echo >&2
+        exit 1
+    fi
+}
+
+function output_verbose_start() {
+    if [[ ${AIRFLOW_CI_VERBOSE:="false"} == "true" ]]; then
+        set -x
+    fi
+}
+
+function output_verbose_end() {
+    if [[ ${AIRFLOW_CI_VERBOSE:="false"} == "true" ]]; then
+        set +x
+    fi
+}

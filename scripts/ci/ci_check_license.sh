@@ -19,81 +19,26 @@
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 set -uo pipefail
 
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
 
-acquire_rat_jar () {
+basic_sanity_checks
 
-  URL="http://repo1.maven.org/maven2/org/apache/rat/apache-rat/${RAT_VERSION}/apache-rat-${RAT_VERSION}.jar"
+output_verbose_start
 
-  JAR="${RAT_JAR}"
+pushd "${MY_DIR}"/../../ &>/dev/null || exit 1
 
-  # Download rat launch jar if it hasn't been downloaded yet
-  if [[ ! -f "${JAR}" ]]; then
-    # Download
-    echo "Attempting to fetch rat"
-    JAR_DL="${JAR}.part"
-    if [[ $(command -v curl) ]]; then
-      curl -L --silent "${URL}" > "${JAR_DL}" && mv "${JAR_DL}" "${JAR}"
-    elif [[ $(command -v wget) ]]; then
-      wget --quiet "${URL}" -O "${JAR_DL}" && mv "${JAR_DL}" "${JAR}"
-    else
-      echo >&2 "You do not have curl or wget installed, please install rat manually."
-      exit 1
-    fi
-  fi
+rebuild_image_if_needed_for_tests
 
+docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" -t \
+       --entrypoint /opt/airflow/scripts/ci/in_container/run_check_licence.sh \
+       --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
+       --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
+       --env HOST_USER_ID="$(id -ur)" \
+       --env HOST_GROUP_ID="$(id -gr)" \
+       "${AIRFLOW_CI_IMAGE}" \
 
-  if ! unzip -tq "${JAR}" &> /dev/null; then
-    # We failed to download
-    rm "${JAR}"
-    echo >&2 "Our attempt to download rat locally to ${JAR} failed. Please install rat manually."
-    exit 1
-  fi
-  echo "Done downloading."
-}
+popd &>/dev/null || exit 1
 
-# Go to the Airflow project root directory
-AIRFLOW_ROOT="$(cd "${MY_DIR}"/../../ && pwd )/$(basename "$1")"
+output_verbose_end
 
-TMP_DIR=/tmp
-
-if test -x "$JAVA_HOME/bin/java"; then
-    declare JAVA_CMD="$JAVA_HOME/bin/java"
-else
-    declare JAVA_CMD=java
-fi
-
-export RAT_VERSION=0.12
-export RAT_JAR="${TMP_DIR}/lib/apache-rat-${RAT_VERSION}.jar"
-mkdir -p "${TMP_DIR}/lib"
-
-
-[[ -f "${RAT_JAR}" ]] || acquire_rat_jar || {
-    echo >&2 "Download failed. Obtain the rat jar manually and place it at ${RAT_JAR}"
-    exit 1
-}
-
-# This is the target of a symlink in airflow/www/static/docs -
-# and rat exclude doesn't cope with the symlink target doesn't exist
-mkdir -p docs/_build/html/
-
-echo "Running license checks. This can take a while."
-
-set -x
-if ! ${JAVA_CMD} -jar "${RAT_JAR}" -E "${AIRFLOW_ROOT}"/.rat-excludes \
-    -d "${AIRFLOW_ROOT}" > rat-results.txt; then
-   echo >&2 "RAT exited abnormally"
-   exit 1
-fi
-set +x
-
-ERRORS="$(grep -e "??" rat-results.txt)"
-
-if test ! -z "${ERRORS}"; then
-    echo >&2 "Could not find Apache license headers in the following files:"
-    echo >&2 "${ERRORS}"
-    exit 1
-else
-    echo -e "RAT checks passed."
-fi

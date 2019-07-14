@@ -21,34 +21,19 @@
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
-# shellcheck source=./_check_coreutils.sh
-. "${MY_DIR}"/_check_coreutils.sh
-
-pushd "${MY_DIR}/../../" &>/dev/null || exit 1
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
 
 export VERBOSE=${VERBOSE:="true"}
 
-if [[ ${VERBOSE} == "true" ]]; then
-    set -x
-else
-    echo
-    echo "Running the scripts without verbose output"
-    echo "You can increase verbosity by running 'export VERBOSE=true'"
-    echo
-fi
+basic_sanity_checks
 
-export PYTHON_VERSION=${PYTHON_VERSION:=$(python -c \
-    'import sys; print("%s.%s" % (sys.version_info.major, sys.version_info.minor))')}
-AIRFLOW_VERSION=$(cat airflow/version.py - << EOF | python
-print(version.replace("+",""))
-EOF
-)
-export AIRFLOW_VERSION
+pushd "${MY_DIR}/../../" &>/dev/null || exit 1
 
-export DOCKERHUB_USER=${DOCKERHUB_USER:="apache"}
-export DOCKERHUB_REPO=${DOCKERHUB_REPO:="airflow"}
+output_verbose_start
+
+rebuild_image_if_needed_for_tests
+
 export BACKEND=${BACKEND:="sqlite"}
 export ENV=${ENV:="docker"}
 export MOUNT_LOCAL_SOURCES=${MOUNT_LOCAL_SOURCES:="false"}
@@ -74,7 +59,6 @@ export AIRFLOW_CONTAINER_BRANCH_NAME=${AIRFLOW_CONTAINER_BRANCH_NAME:="master"}
 
 export AIRFLOW_CONTAINER_DOCKER_IMAGE=\
 ${DOCKERHUB_USER}/${DOCKERHUB_REPO}:${AIRFLOW_CONTAINER_BRANCH_NAME}-python${PYTHON_VERSION}-ci
-
 
 echo
 echo "Using docker image: ${AIRFLOW_CONTAINER_DOCKER_IMAGE} for docker compose runs"
@@ -117,6 +101,4 @@ set -u
 
 popd &>/dev/null || exit 1
 
-if [[ ${VERBOSE} == "true" ]]; then
-    set +x
-fi
+output_verbose_end

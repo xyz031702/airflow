@@ -307,24 +307,25 @@ docker run -t -i -v $(pwd):/airflow/ -w /airflow/ "local-airflow:3.6" bash
 
 ### Running tests
 Once you enter docker container you should be able to simply run
-`./run-tests` at will. Note that if you want to pass extra parameters to nose
+`run-tests` at will (it is in the path). Note that if you want to pass extra parameters to nose
 you should do it after '--'
 
 For example, in order to just execute the "core" unit tests, run the following:
 ```bash
-./run-tests tests.core:CoreTest -- -s --logging-level=DEBUG
+run-tests tests.core:CoreTest -- -s --logging-level=DEBUG
 ```
 or a single test method:
 ```bash
-./run-tests tests.core:CoreTest.test_check_operators -- -s --logging-level=DEBUG
+run-tests tests.core:CoreTest.test_check_operators -- -s --logging-level=DEBUG
 ```
 or another example:
 ```
-./run-tests tests.contrib.operators.test_dataproc_operator:DataprocClusterCreateOperatorTest.test_create_cluster_deletes_error_cluster  -s --logging-level=DEBUG
+run-tests tests.contrib.operators.test_dataproc_operator:DataprocClusterCreateOperatorTest.test_create_cluster_deletes_error_cluster  -s --logging-level=DEBUG
 ```
 
 Note that `./run_tests` script runs tests but performs database initialisation first.
-You can skip the database initialisation part with --skip-db-init (-s) flag.
+You can skip the database initialisation part with `--skip-db-init` (`-s`) flag. This is
+extremely helpful when you run the test several times without resetting the database.
 
 
 ## Integration test development environment
@@ -484,26 +485,23 @@ All these tests run in python3.6 environment. Note that the first time you run t
 time to rebuild the docker images required to run the tests, but all subsequent runs will be much faster -
 the build phase will just check if your code has changed and rebuild as needed.
 
-* [ci_check_license.sh](scripts/ci/ci_check_license.sh) - checks if all licences are present in source files.
-  This script requires java and runs in host environment - this means that the check can behave differently
-  on your machine than in the Travis CI.
-
-The other checks below are run in a docker environment, which means that if you run them locally,
+The checks below are run in a docker environment, which means that if you run them locally,
 they should give the same results as the tests run in TravisCI without special environment preparation:
 
 * [ci_docs.sh](scripts/ci/ci_docs.sh) - checks that documentation can be built without warnings.
-  Documentation is available in [docs/_build/html](docs/_build/html) folder after the script is run
-  and succeeds.
 * [ci_flake8.sh](scripts/ci/ci_flake8.sh) - runs flake8 source code style guide enforcement tool
 * [ci_mypy.sh](scripts/ci/ci_mypy.sh) - runs mypy type annotation consistency check
 * [ci_pylint.sh](scripts/ci/ci_pylint.sh) - runs pylint static code checker
 * [ci_lint_dockerfile.sh](scripts/ci/ci_lint_dockerfile.sh) - runs lint checker for the Dockerfile
+* [ci_check_license.sh](scripts/ci/ci_check_license.sh) - checks if all licences are present in the sources
 
-Those scripts ar optimised for time of rebuilds odf docker image. The image will be automatically
+Those scripts ar optimised for time of rebuilds of docker image. The image will be automatically
 rebuilt when needed (for example when dependencies change). You can also force rebuilding of the
 image by deleting [.build](./build) directory which keeps cached information about the images
 built.
 
+Documentation after it is built, is available in [docs/_build/html](docs/_build/html) folder.
+This folder is mounted from the host so you can access those files in your host as well.
 
 If you are already in the [Docker Compose Environment](#entering-bash-in-the-environment) you can also 
 run the same static checks from within container:
@@ -511,9 +509,11 @@ run the same static checks from within container:
 * Mypy: `./scripts/ci/in_container/run_mypy.sh airflow tests`
 * Pylint: `./scripts/ci/in_container/run_pylint.sh`
 * Flake8: `./scripts/ci/in_container/run_flake8.sh`
+* Licence check: `./scripts/ci/in_container/run_check_licence.sh`
+* Documentation: `./scripts/ci/in_container/run_docs_build.sh`
 
-In all scripts you can also pass module/file path as parameters of the scripts to only check selected module
-or file. For example:
+In all testscripts you can also pass module/file path as parameters of the scripts to only check
+selected module or file. For example:
 
 In container:
 
@@ -529,9 +529,9 @@ In host:
 
 or
 
-`./scripts/ci/ci_pylint.sh./airflow/example_dags/test_utils.py`
+`./scripts/ci/ci_pylint.sh ./airflow/example_dags/test_utils.py`
 
-
+And similarly for other scripts.
 
 ### Pylint checks (work in-progress)
 

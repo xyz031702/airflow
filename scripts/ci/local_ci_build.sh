@@ -20,25 +20,14 @@
 
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
 
-export RUN_TESTS="false"
-export MOUNT_LOCAL_SOURCES="true"
-export PYTHON_VERSION=${PYTHON_VERSION:="3.6"}
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
 
-export PYTHON_VERSION=${PYTHON_VERSION:=$(python -c \
-    'import sys; print("%s.%s" % (sys.version_info.major, sys.version_info.minor))')}
-AIRFLOW_VERSION=$(cat airflow/version.py - << EOF | python
-print(version.replace("+",""))
-EOF
-)
-export AIRFLOW_VERSION
+basic_sanity_checks
 
-export DOCKERHUB_USER=${DOCKERHUB_USER:="apache"}
-export DOCKERHUB_REPO=${DOCKERHUB_REPO:="airflow"}
-export AIRFLOW_CI_VERBOSE="false"
-export AIRFLOW_CONTAINER_PUSH_IMAGES="false"
-export AIRFLOW_CONTAINER_CI_OPTIMISED_BUILD="true"
+output_verbose_start
 
- ./hooks/build
+rebuild_image_if_needed_for_tests
+
+output_verbose_end

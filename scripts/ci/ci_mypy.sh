@@ -20,36 +20,32 @@ set -euo pipefail
 
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# shellcheck source=./_check_not_in_container.sh
-. "${MY_DIR}/_check_not_in_container.sh"
-# shellcheck source=./_force_python_3.6.sh
-. "${MY_DIR}"/_force_python_3.6.sh
-# shellcheck source=./_check_coreutils.sh
-. "${MY_DIR}"/_check_coreutils.sh
-# shellcheck source=./_cache_utils.sh
-. "${MY_DIR}"/_cache_utils.sh
-# shellcheck source=./_verbosity_utils.sh
-. "${MY_DIR}"/_verbosity_utils.sh
+# shellcheck source=./_utils.sh
+. "${MY_DIR}/_utils.sh"
+
+basic_sanity_checks
 
 output_verbose_start
 
 pushd "${MY_DIR}/../../" &>/dev/null || exit 1
 
-# shellcheck source=./_rebuild_image_if_needed_for_static_checks.sh
-. "${MY_DIR}/_rebuild_image_if_needed_for_static_checks.sh"
-
-# shellcheck source=./_mounted_volumes_for_static_checks.sh
-. "${MY_DIR}"/_mounted_volumes_for_static_checks.sh
+rebuild_image_if_needed_for_static_checks
 
 FILES=("$@")
 if [[ "${#FILES[@]}" == "0" ]]; then
     docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" \
         --entrypoint /opt/airflow/scripts/ci/in_container/run_mypy.sh \
+        --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
+        --env HOST_USER_ID="$(id -ur)" \
+        --env HOST_GROUP_ID="$(id -gr)" \
         "${AIRFLOW_SLIM_CI_IMAGE}" \
         "airflow" "tests" | tee -a "${OUTPUT_LOG}"
 else
     docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" \
         --entrypoint /opt/airflow/scripts/ci/in_container/run_mypy.sh \
+        --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
+        --env HOST_USER_ID="$(id -ur)" \
+        --env HOST_GROUP_ID="$(id -gr)" \
         "${AIRFLOW_SLIM_CI_IMAGE}" \
         "${FILES[@]}" | tee -a "${OUTPUT_LOG}"
 fi
