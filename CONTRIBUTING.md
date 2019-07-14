@@ -43,15 +43,19 @@ little bit helps, and credit will always be given.
     - [Entering bash shell in Docker Compose environment](#entering-bash-shell-in-docker-compose-environment)
     - [Running individual tests within the container](#running-individual-tests-within-the-container)
     - [Running static code analysis](#running-static-code-analysis)
+      - [Running static code analysis from the host](#running-static-code-analysis-from-the-host)
+      - [Running static code analysis in the docker compose environment](#running-static-code-analysis-in-the-docker-compose-environment)
+      - [Running static code analysis on selected files/modules](#running-static-code-analysis-on-selected-filesmodules)
   - [Automation of image building](#automation-of-image-building)
   - [Local Docker Compose scripts](#local-docker-compose-scripts)
     - [Running the whole suite of tests](#running-the-whole-suite-of-tests)
     - [Stopping the environment](#stopping-the-environment)
+    - [Fixing file/directory ownership](#fixing-filedirectory-ownership)
     - [Building the images](#building-the-images)
     - [Force pulling the images](#force-pulling-the-images)
   - [Cleaning up cached Docker images/containers](#cleaning-up-cached-docker-imagescontainers)
   - [Troubleshooting](#troubleshooting)
-- [Pylint checks (work in-progress)](#pylint-checks-work-in-progress)
+- [Pylint checks](#pylint-checks)
 - [Git hooks](#git-hooks)
 - [Pull Request Guidelines](#pull-request-guidelines)
 - [Testing on Travis CI](#testing-on-travis-ci)
@@ -310,9 +314,6 @@ Once you are inside the environment you can run individual tests as described in
 
 ### Running static code analysis
 
-NOTE!!! Those scripts for static code analysis are supposed to be run from the host not inside the container
-They will fail if you try to rune them inside the container with appropriate error message.
-
 We have a number of static code checks that are run in Travis CI but you can run them locally as well.
 All the scripts are available in [scripts/ci](scripts/ci) folder.
 
@@ -321,7 +322,12 @@ time to rebuild the docker images required to run the tests, but all subsequent 
 the build phase will just check if your code has changed and rebuild as needed.
 
 The checks below are run in a docker environment, which means that if you run them locally,
-they should give the same results as the tests run in TravisCI without special environment preparation:
+they should give the same results as the tests run in TravisCI without special environment preparation.
+
+#### Running static code analysis from the host
+
+You can trigger the static checks from the host environment, without entering Docker container. You
+do that by running appropriate scripts (The same is done in TravisCI)
 
 * [ci_docs.sh](scripts/ci/ci_docs.sh) - checks that documentation can be built without warnings.
 * [ci_flake8.sh](scripts/ci/ci_flake8.sh) - runs flake8 source code style guide enforcement tool
@@ -331,12 +337,15 @@ they should give the same results as the tests run in TravisCI without special e
 * [ci_check_license.sh](scripts/ci/ci_check_license.sh) - checks if all licences are present in the sources
 
 Those scripts ar optimised for time of rebuilds of docker image. The image will be automatically
-rebuilt when needed (for example when dependencies change). You can also force rebuilding of the
-image by deleting [.build](./build) directory which keeps cached information about the images
-built.
+rebuilt when needed (for example when dependencies change). 
+
+You can also force rebuilding of the image by deleting [.build](./build) 
+directory which keeps cached information about the images built.
 
 Documentation after it is built, is available in [docs/_build/html](docs/_build/html) folder.
 This folder is mounted from the host so you can access those files in your host as well.
+
+#### Running static code analysis in the docker compose environment
 
 If you are already in the [Docker Compose Environment](#entering-bash-shell-in-docker-compose-environment)
 you can also run the same static checks from within container:
@@ -347,8 +356,10 @@ you can also run the same static checks from within container:
 * Licence check: `./scripts/ci/in_container/run_check_licence.sh`
 * Documentation: `./scripts/ci/in_container/run_docs_build.sh`
 
-In all testscripts you can also pass module/file path as parameters of the scripts to only check
-selected module or file. For example:
+#### Running static code analysis on selected files/modules
+
+In all static check scripts - both in container and in the host you can also pass module/file path as 
+parameters of the scripts to only check selected modules or files. For example:
 
 In container:
 
@@ -377,9 +388,11 @@ Note that building image first time pulls the pre-built version of image from Do
 sources and rebuilds the layers that need to be rebuilt - because they changed in local sources. 
 This might take a bit of time when you run it for the first time and when you add new dependencies - 
 but rebuilding the image should be an operation done quite rarely (mostly when you start seeing some
-unknown problems and want to refresh the environment). See [Troubleshootin section](#troubleshooting).
+unknown problems and want to refresh the environment). 
+
+See [Troubleshooting section](#troubleshooting) for steps you can make to clean the environment.
  
-Once you performed the first build, the images are rebuilt locally rather than pulled unless you 
+Once you performed the first build, the images are rebuilt locally rather than pulled - unless you 
 force pull the images. But you can force it using the scripts described below.
 
 ## Local Docker Compose scripts
@@ -425,11 +438,20 @@ Docker-compose environment starts a number of docker containers and keep them ru
 You can tear them down by running 
 [/scripts/ci/local_ci_stop_environment.sh](scripts/ci/local_ci_stop_environment.sh)
 
+
+### Fixing file/directory ownership
+
+On Linux there is a problem with propagating ownership of created files (known Docker problem). Basically
+files and directories created in container are not owned by the host user (but by the root user in our case). 
+This might prevent you from switching branches for example if files owned by root user are created within 
+your sources. In case you are on Linux host and haa some files in your sources created by the root user, 
+you can fix the ownership of those files by running 
+[scripts/ci/local_ci_fix_ownership.sh](scripts/ci/local_ci_fix_ownership.sh) script.
+
 ### Building the images
 
 You can manually trigger building of the local CI image using
 [scripts/ci/local_ci_build.sh](scripts/ci/local_ci_build.sh). 
-
 
 ### Force pulling the images
 
@@ -439,14 +461,15 @@ latest images from DockerHub repository before building. This can be done with
 
 ## Cleaning up cached Docker images/containers
 
-Note that you might need to cleanup your Docker environment from time to time. The images are quite big
+Note that you might need to cleanup your Docker environment occasionally. The images are quite big
 (1.5GB for both images needed for static code analysis and CI tests). And if you often rebuild/update
-images you might end up with some unused image data.
+images you might end up with some unused image data. 
 
 Cleanup can be performed with `docker system prune` command. In case you have huge problems with disk space
-and want to clean-up all image data you can run `docker system prune --all`
+and want to clean-up all image data you can run `docker system prune --all`. You might need to 
+[Stop the environment](#stopping-the-environment) in order to clean everything including running containers.
 
-If on Mac OS you nd up with not enough disk space for Docker you should increase disk space
+If you are on Mac OS and you end up with not enough disk space for Docker you should increase disk space
 available for Docker. See [Docker for Mac - Space](https://docs.docker.com/docker-for-mac/space/) for details.
 
 ## Troubleshooting
@@ -454,15 +477,22 @@ available for Docker. See [Docker for Mac - Space](https://docs.docker.com/docke
 In case you have problems with the Docker Compose environment - try the following:
 
 1. [Stop the environment](#stopping-the-environment)
-2. [Force pull the images](#force-pulling-the-images)
-3. [Clean Up Docker engine](#cleaning-up-cached-docker-imagescontainers)
-4. Remove and re-install Docker CE,then [force pull the images](#force-pulling-the-images)
+2. Delete [.build](.build)
+3. [Force pull the images](#force-pulling-the-images)
+4. Re-run the scripts
+5. [Clean Up Docker engine](#cleaning-up-cached-docker-imagescontainers)
+6. [Fix file/directory ownership](#fixing-filedirectory-ownership)
+7. Run `docker system prune --all` to cleanup all images/containers
+8. Restart your docker and try again
+9. Restart your machine and try again
+10. Run `docker system prune --all` after restart (if you had previously errors when running it)
+1. Remove and re-install Docker CE, then [force pull the images](#force-pulling-the-images)
 
 In case the problems are not solved, you can set VERBOSE variable to "true" (`export VERBOSE="true"`)
 and rerun failing command, and copy&paste the output from your terminal, describe the problem and 
 post it in [Airflow Slack](https://apache-airflow-slack.herokuapp.com/) #troubleshooting channel.
 
-# Pylint checks (work in-progress)
+# Pylint checks
 
 Note that for pylint we are in the process of fixing pylint code checks for the whole Airflow code. This is
 a huge task so we implemented an incremental approach for the process. Currently most of the code is

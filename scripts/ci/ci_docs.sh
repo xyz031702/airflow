@@ -25,13 +25,10 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 basic_sanity_checks
 
-output_verbose_start
-
-pushd "${MY_DIR}"/../../ &>/dev/null || exit 1
+script_start
 
 rebuild_image_if_needed_for_static_checks
 
-set -x
 docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" -t \
        --entrypoint /opt/airflow/docs/build.sh \
        --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
@@ -39,8 +36,4 @@ docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" -t \
        --env HOST_GROUP_ID="$(id -gr)" \
        "${AIRFLOW_SLIM_CI_IMAGE}" \
 
-set +x
-
-popd &>/dev/null || exit 1
-
-output_verbose_end
+script_end

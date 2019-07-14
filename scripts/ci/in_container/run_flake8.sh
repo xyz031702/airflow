@@ -27,23 +27,17 @@ MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-assert_in_container
+in_container_basic_sanity_check
 
-output_verbose_start
-
-pushd "${AIRFLOW_SOURCES}"  &>/dev/null || exit 1
-
-echo
-echo "Running in $(pwd)"
-echo
+in_container_script_start
 
 if [[ ${#@} == "0" ]]; then
     echo
-    echo "Running flake with no parameters"
+    echo "Running flake8 with no parameters"
     echo
 else
     echo
-    echo "Running flake with parameters: $*"
+    echo "Running flake8 with parameters: $*"
     echo
 fi
 
@@ -51,10 +45,7 @@ flake8 "$@"
 
 RES="$?"
 
-
-popd &>/dev/null || exit 1
-
-output_verbose_end
+in_container_script_end
 
 if [[ "${RES}" != 0 ]]; then
     echo >&2

@@ -18,6 +18,9 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+#
+# Executes tests locally
+#
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -27,4 +30,4 @@ export PYTHON_VERSION=${PYTHON_VERSION:="3.6"}
 export VERBOSE=${VERBOSE:="false"}
 
 # shellcheck source=./ci_run_airflow_testing.sh
-"${MY_DIR}/ci_run_airflow_testing.sh"
+exec "${MY_DIR}/ci_run_airflow_testing.sh"

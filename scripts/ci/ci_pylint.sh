@@ -25,23 +25,21 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 basic_sanity_checks
 
-output_verbose_start
-
-pushd "${MY_DIR}/../../" &>/dev/null || exit 1
+script_start
 
 rebuild_image_if_needed_for_static_checks
 
 FILES=("$@")
 if [[ "${#FILES[@]}" == "0" ]]; then
     docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" \
-        --entrypoint /opt/airflow/scripts/ci/in_container/run_pylint.sh \
+       --entrypoint /opt/airflow/scripts/ci/in_container/run_pylint.sh \
        --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
        --env HOST_USER_ID="$(id -ur)" \
        --env HOST_GROUP_ID="$(id -gr)" \
         "${AIRFLOW_SLIM_CI_IMAGE}" | tee -a "${OUTPUT_LOG}"
 else
     docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" \
-        --entrypoint /opt/airflow/scripts/ci/in_container/run_pylint.sh \
+       --entrypoint /opt/airflow/scripts/ci/in_container/run_pylint.sh \
        --env AIRFLOW_CI_VERBOSE=${VERBOSE} \
        --env HOST_USER_ID="$(id -ur)" \
        --env HOST_GROUP_ID="$(id -gr)" \
@@ -49,6 +47,4 @@ else
         "${FILES[@]}" | tee -a "${OUTPUT_LOG}"
 fi
 
-popd &>/dev/null || exit 1
-
-output_verbose_end
+script_end

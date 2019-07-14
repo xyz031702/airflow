@@ -28,9 +28,7 @@ export VERBOSE=${VERBOSE:="true"}
 
 basic_sanity_checks
 
-pushd "${MY_DIR}/../../" &>/dev/null || exit 1
-
-output_verbose_start
+script_start
 
 rebuild_image_if_needed_for_tests
 
@@ -63,6 +61,12 @@ ${DOCKERHUB_USER}/${DOCKERHUB_REPO}:${AIRFLOW_CONTAINER_BRANCH_NAME}-python${PYT
 echo
 echo "Using docker image: ${AIRFLOW_CONTAINER_DOCKER_IMAGE} for docker compose runs"
 echo
+
+HOST_USER_ID="$(id -ur)"
+export HOST_USER_ID
+
+HOST_GROUP_ID="$(id -gr)"
+export HOST_GROUP_ID
 
 set +u
 if [[ "${ENV}" == "docker" ]]; then
@@ -99,6 +103,4 @@ else
 fi
 set -u
 
-popd &>/dev/null || exit 1
-
-output_verbose_end
+script_end

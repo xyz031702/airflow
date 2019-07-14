@@ -18,6 +18,9 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+#
+# Stops the Docker Compose environment
+#
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -26,7 +29,7 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 basic_sanity_checks
 
-output_verbose_start
+script_start
 
 export PYTHON_VERSION=${PYTHON_VERSION:="3.6"}
 export DOCKERHUB_USER=${DOCKERHUB_USER:="apache"}
@@ -39,7 +42,12 @@ export AIRFLOW_CONTAINER_BRANCH_NAME=${AIRFLOW_CONTAINER_BRANCH_NAME:="master"}
 export AIRFLOW_CONTAINER_DOCKER_IMAGE=\
 ${DOCKERHUB_USER}/${DOCKERHUB_REPO}:${AIRFLOW_CONTAINER_BRANCH_NAME}-python${PYTHON_VERSION}-ci
 
-set -x
+HOST_USER_ID="$(id -ur)"
+export HOST_USER_ID
+
+HOST_GROUP_ID="$(id -gr)"
+export HOST_GROUP_ID
+
 docker-compose \
     -f "${MY_DIR}/docker-compose.yml" \
     -f "${MY_DIR}/docker-compose-kubernetes.yml" \
@@ -47,4 +55,5 @@ docker-compose \
     -f "${MY_DIR}/docker-compose-mysql.yml" \
     -f "${MY_DIR}/docker-compose-postgres.yml" \
     -f "${MY_DIR}/docker-compose-sqlite.yml" down
-set +x
+
+script_end

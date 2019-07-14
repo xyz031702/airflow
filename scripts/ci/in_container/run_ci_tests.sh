@@ -26,12 +26,9 @@ MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-output_verbose_start
+in_container_basic_sanity_check
 
-# shellcheck source=./_in_container_utils.sh
-. "${MY_DIR}/_in_container_utils.sh"
-
-assert_in_container
+in_container_script_start
 
 # any argument received is overriding the default nose execution arguments:
 NOSE_ARGS=( "$@" )
@@ -75,6 +72,6 @@ else
     echo "All tests successful"
 fi
 
-output_verbose_end
+in_container_script_end
 
 exit "${RES}"

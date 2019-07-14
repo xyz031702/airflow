@@ -29,6 +29,10 @@ Dockerfile \
 airflow/version.py
 "
 
+mkdir -p ${AIRFLOW_SOURCES}/.mypy_cache
+mkdir -p ${AIRFLOW_SOURCES}/logs
+mkdir -p ${AIRFLOW_SOURCES}/tmp
+
 #
 # Sets mounting of host volumes to container for static checks
 # unless AIRFLOW_MOUNT_HOST_VOLUMES_FOR_STATIC_CHECKS is not true
@@ -55,6 +59,8 @@ if [[ ${AIRFLOW_MOUNT_HOST_VOLUMES_FOR_STATIC_CHECKS} == "true" ]]; then
       "-v" "${AIRFLOW_SOURCES}/setup.py:/opt/airflow/setup.py" \
       "-v" "${AIRFLOW_SOURCES}/.rat-excludes:/opt/airflow/.rat-excludes" \
       "-v" "${AIRFLOW_SOURCES}/logs:/opt/airflow/logs" \
+      "-v" "${AIRFLOW_SOURCES}/logs:/root/logs" \
+      "-v" "${AIRFLOW_SOURCES}/tmp:/opt/airflow/tmp" \
       "-t"
     )
 else
@@ -381,35 +387,52 @@ EOF
 }
 
 #
-# If VERBOSE variable is set to true, it enables verbose output of commands executed
+# Starts the script/ If VERBOSE variable is set to true, it enables verbose output of commands executed
 # Also prints some useful diagnostics information at start of the script
 #
-function output_verbose_start {
+function script_start {
     echo
-    echo Log is being redirected to "${OUTPUT_LOG}"
+    echo "Running $(basename $0)"
+    echo
+    echo "Log is redirected to ${OUTPUT_LOG}"
     echo
     if [[ ${VERBOSE:=} == "true" ]]; then
         echo
-        echo Variable VERBOSE Set to "true"
-        echo You will see a lot of output
+        echo "Variable VERBOSE Set to \"true\""
+        echo "You will see a lot of output"
         echo
         set -x
     else
-        echo You can increase verbosity by running \'export VERBOSE="true"\'
+        echo "You can increase verbosity by running 'export VERBOSE=\"true\""
         if [[ ${SKIP_CACHE_DELETION:=} != "true" ]]; then
-            echo And skip deleting the output file with \'export SKIP_CACHE_DELETION="true"\'
+            echo "And skip deleting the output file with 'export SKIP_CACHE_DELETION=\"true\""
         fi
         echo
     fi
+    START_SCRIPT_TIME=$(date +%s)
 }
 
 #
 # Disables verbosity in the script
 #
-function output_verbose_end {
+function script_end {
     if [[ ${VERBOSE:=} == "true" ]]; then
         set +x
     fi
+    END_SCRIPT_TIME=$(date +%s)
+    RUN_SCRIPT_TIME=$((END_SCRIPT_TIME-START_SCRIPT_TIME))
+    echo
+    echo "Finished the script $(basename $0)"
+    echo "It took ${RUN_SCRIPT_TIME} seconds"
+    echo
+}
+
+function go_to_airflow_sources {
+    echo
+    pushd "${MY_DIR}/../../" &>/dev/null || exit 1
+    echo
+    echo "Running in host in $(pwd)"
+    echo
 }
 
 #
@@ -417,6 +440,7 @@ function output_verbose_end {
 #
 function basic_sanity_checks() {
     assert_not_in_container
+    go_to_airflow_sources
     force_python_3_6
     check_if_coreutils_installed
     create_cache_directory

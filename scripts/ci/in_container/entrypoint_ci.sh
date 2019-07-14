@@ -28,11 +28,9 @@ fi
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-assert_in_container
+in_container_basic_sanity_check
 
-cleanup_pyc
-
-output_verbose_start
+in_container_script_start
 
 AIRFLOW_ROOT="${MY_DIR}/../../.."
 
@@ -114,9 +112,11 @@ if [[ -d "${HOME}/.minikube" ]]; then
     sudo chown -R "${AIRFLOW_USER}.${AIRFLOW_USER}" "${HOME}/.kube" "${HOME}/.minikube"
 fi
 
-# Cleanup the logs when entering the environment
-sudo rm -rf "${AIRFLOW_HOME}"/logs/*
-mkdir -pv "${AIRFLOW_HOME}"/logs/
+# Cleanup the logs, tmp when entering the environment
+sudo rm -rf "${AIRFLOW_SOURCES}"/logs/*
+sudo rm -rf "${AIRFLOW_SOURCES}"/tmp/*
+mkdir -p "${AIRFLOW_SOURCES}"/logs/
+mkdir -p "${AIRFLOW_SOURCES}"/tmp/
 
 if [[ "${ENV}" == "docker" ]]; then
     # Start MiniCluster
@@ -225,4 +225,4 @@ else
     codecov -e "py${PYTHON_VERSION}-backend_${BACKEND}-env_${ENV}"
 fi
 
-output_verbose_end
+in_container_script_end

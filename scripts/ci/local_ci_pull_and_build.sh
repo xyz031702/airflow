@@ -18,6 +18,9 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
+#
+# Pulls and rebuilds the full CI image used for testing
+#
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -26,10 +29,10 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 basic_sanity_checks
 
-output_verbose_start
+script_start
 
 export AIRFLOW_CONTAINER_FORCE_PULL_IMAGES="true"
 
 rebuild_image_if_needed_for_tests
 
-output_verbose_end
+script_end

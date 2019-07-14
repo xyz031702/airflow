@@ -19,8 +19,9 @@
 #  under the License.
 
 #
-# Builds full CI docker image - the image that can be used for running full tests of Airflow
+# Fixes ownership for files created inside container (files owned by root will be owned by host user)
 #
+
 set -euo pipefail
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -31,6 +32,26 @@ basic_sanity_checks
 
 script_start
 
-rebuild_image_if_needed_for_tests
+export PYTHON_VERSION=${PYTHON_VERSION:="3.6"}
+export DOCKERHUB_USER=${DOCKERHUB_USER:="apache"}
+export DOCKERHUB_REPO=${DOCKERHUB_REPO:="airflow"}
+export WEBSERVER_HOST_PORT=${WEBSERVER_HOST_PORT:="8080"}
+
+# Default branch name for triggered builds is master
+export AIRFLOW_CONTAINER_BRANCH_NAME=${AIRFLOW_CONTAINER_BRANCH_NAME:="master"}
+
+export AIRFLOW_CONTAINER_DOCKER_IMAGE=\
+${DOCKERHUB_USER}/${DOCKERHUB_REPO}:${AIRFLOW_CONTAINER_BRANCH_NAME}-python${PYTHON_VERSION}-ci
+
+HOST_USER_ID="$(id -ur)"
+export HOST_USER_ID
+
+HOST_GROUP_ID="$(id -gr)"
+export HOST_GROUP_ID
+
+docker-compose \
+    -f "${MY_DIR}/docker-compose.yml" \
+    -f "${MY_DIR}/docker-compose-local.yml" \
+    run --no-deps airflow-testing /opt/airflow/scripts/ci/in_container/run_fix_ownership.sh
 
 script_end

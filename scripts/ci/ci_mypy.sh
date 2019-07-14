@@ -25,9 +25,7 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 basic_sanity_checks
 
-output_verbose_start
-
-pushd "${MY_DIR}/../../" &>/dev/null || exit 1
+script_start
 
 rebuild_image_if_needed_for_static_checks
 
@@ -50,6 +48,4 @@ else
         "${FILES[@]}" | tee -a "${OUTPUT_LOG}"
 fi
 
-popd &>/dev/null || exit 1
-
-output_verbose_end
+script_end

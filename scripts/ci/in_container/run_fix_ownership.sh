@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,19 +17,17 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-#
-# Builds full CI docker image - the image that can be used for running full tests of Airflow
-#
+# Bash sanity settings (error on exit, complain for undefined vars, error when pipe fails)
 set -euo pipefail
-MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 
-# shellcheck source=./_utils.sh
-. "${MY_DIR}/_utils.sh"
+# shellcheck source=./_in_container_utils.sh
+. "${MY_DIR}/_in_container_utils.sh"
 
-basic_sanity_checks
+in_container_basic_sanity_check
 
-script_start
+in_container_script_start
 
-rebuild_image_if_needed_for_tests
+in_container_fix_ownership
 
-script_end
+in_container_script_end

@@ -21,13 +21,11 @@ MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # shellcheck source=./_utils.sh
 . "${MY_DIR}/_utils.sh"
 
-assert_not_in_container
+basic_sanity_checks
 
-pushd "${MY_DIR}/../../" &>/dev/null || exit 1
+script_start
 
-set -x
 docker run -v "$(pwd)/Dockerfile:/root/Dockerfile" -v "$(pwd)/.hadolint.yaml:/root/.hadolint.yaml" \
     -w /root hadolint/hadolint /bin/hadolint Dockerfile
-set +x
 
-popd &>/dev/null || exit 1
+script_end

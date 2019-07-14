@@ -27,17 +27,13 @@ MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-assert_in_container
+in_container_basic_sanity_check
 
-output_verbose_start
-
-pushd "${AIRFLOW_SOURCES}"  &>/dev/null || exit 1
-
-echo
-echo "Running in $(pwd)"
-echo
+in_container_script_start
 
 sudo rm -rf "$(pwd)/docs/_build/*"
 sudo "$(pwd)/docs/build.sh"
 
-output_verbose_end
+in_container_fix_ownership
+
+in_container_script_end

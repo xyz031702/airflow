@@ -38,5 +38,10 @@ services:
       - ../../.rat-excludes:/opt/airflow/.rat-excludes
       - ../../run-tests:/opt/airflow/run-tests
       - ../../logs:/root/airflow/logs
+      - ../../logs:/opt/airflow/logs
+      - ../../tmp:/opt/airflow/tmp
+    environment:
+      - HOST_USER_ID
+      - HOST_GROUP_ID
     ports:
       - "${WEBSERVER_HOST_PORT}:8080"

@@ -27,15 +27,9 @@ MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-assert_in_container
+in_container_basic_sanity_check
 
-output_verbose_start
-
-pushd "${AIRFLOW_SOURCES}"  &>/dev/null || exit 1
-
-echo
-echo "Running in $(pwd)"
-echo
+in_container_script_start
 
 echo
 echo "Running mypy with parameters: $*"
@@ -45,10 +39,7 @@ mypy "$@"
 
 RES="$?"
 
-popd &>/dev/null || exit 1
-
-output_verbose_end
-
+in_container_script_end
 
 if [[ "${RES}" != 0 ]]; then
     echo >&2
