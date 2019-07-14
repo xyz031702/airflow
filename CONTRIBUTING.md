@@ -33,42 +33,39 @@ little bit helps, and credit will always be given.
   - [Improve Documentation](#improve-documentation)
   - [Submit Feedback](#submit-feedback)
 - [Documentation](#documentation)
-- [Setting up a development environment](#setting-up-a-development-environment)
-  - [Local virtualenv development environment](#local-virtualenv-development-environment)
-    - [Installation](#installation)
-    - [Running tests](#running-tests)
-    - [Running tests directly from the IDE](#running-tests-directly-from-the-ide)
-  - [Docker container development environment](#docker-container-development-environment)
-    - [Installation](#installation-1)
-    - [Running tests](#running-tests-1)
-  - [Integration test development environment](#integration-test-development-environment)
-    - [Prerequisites](#prerequisites)
-      - [Docker](#docker)
-      - [Getopt and coreutils](#getopt-and-coreutils)
-    - [Building the images for the first time](#building-the-images-for-the-first-time)
+- [Local virtualenv development environment](#local-virtualenv-development-environment)
+  - [Installation](#installation)
+  - [Running individual tests](#running-individual-tests)
+  - [Running tests directly from the IDE](#running-tests-directly-from-the-ide)
+- [Integration test development environment](#integration-test-development-environment)
+  - [Prerequisites](#prerequisites)
+  - [Using the Docker Compose environment](#using-the-docker-compose-environment)
+    - [Entering bash shell in Docker Compose environment](#entering-bash-shell-in-docker-compose-environment)
+    - [Running individual tests within the container](#running-individual-tests-within-the-container)
+    - [Running static code analysis](#running-static-code-analysis)
+  - [Automation of image building](#automation-of-image-building)
+  - [Local Docker Compose scripts](#local-docker-compose-scripts)
+    - [Running the whole suite of tests](#running-the-whole-suite-of-tests)
+    - [Stopping the environment](#stopping-the-environment)
+    - [Building the images](#building-the-images)
     - [Force pulling the images](#force-pulling-the-images)
-    - [Cleaning up cached Docker images/containers](#cleaning-up-cached-docker-imagescontainers)
-    - [Troubleshooting](#troubleshooting)
-    - [Using the environment](#using-the-environment)
-      - [Running the whole suite of tests](#running-the-whole-suite-of-tests)
-      - [Entering bash environment](#entering-bash-environment)
-      - [Stopping the environment](#stopping-the-environment)
-    - [Running static code analysis locally](#running-static-code-analysis-locally)
-    - [Pylint checks (work in-progress)](#pylint-checks-work-in-progress)
-    - [Git hooks](#git-hooks)
-  - [Pull Request Guidelines](#pull-request-guidelines)
-    - [Testing on Travis CI](#testing-on-travis-ci)
-      - [Travis CI GitHub App (new version)](#travis-ci-github-app-new-version)
-      - [Travis CI GitHub Services (legacy version)](#travis-ci-github-services-legacy-version)
-      - [Prefer travis-ci.com over travis-ci.org](#prefer-travis-cicom-over-travis-ciorg)
-    - [Changing the Metadata Database](#changing-the-metadata-database)
-  - [Setting up the node / npm javascript environment](#setting-up-the-node--npm-javascript-environment)
-    - [Node/npm versions](#nodenpm-versions)
-    - [Using npm to generate bundled files](#using-npm-to-generate-bundled-files)
-      - [npm](#npm)
-      - [npm packages](#npm-packages)
-      - [Upgrading npm packages](#upgrading-npm-packages)
-      - [Javascript Style Guide](#javascript-style-guide)
+  - [Cleaning up cached Docker images/containers](#cleaning-up-cached-docker-imagescontainers)
+  - [Troubleshooting](#troubleshooting)
+- [Pylint checks (work in-progress)](#pylint-checks-work-in-progress)
+- [Git hooks](#git-hooks)
+- [Pull Request Guidelines](#pull-request-guidelines)
+- [Testing on Travis CI](#testing-on-travis-ci)
+  - [Travis CI GitHub App (new version)](#travis-ci-github-app-new-version)
+  - [Travis CI GitHub Services (legacy version)](#travis-ci-github-services-legacy-version)
+  - [Prefer travis-ci.com over travis-ci.org](#prefer-travis-cicom-over-travis-ciorg)
+- [Changing the Metadata Database](#changing-the-metadata-database)
+- [Setting up the node / npm javascript environment](#setting-up-the-node--npm-javascript-environment)
+  - [Node/npm versions](#nodenpm-versions)
+  - [Using npm to generate bundled files](#using-npm-to-generate-bundled-files)
+    - [npm](#npm)
+    - [npm packages](#npm-packages)
+    - [Upgrading npm packages](#upgrading-npm-packages)
+    - [Javascript Style Guide](#javascript-style-guide)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -132,20 +129,9 @@ cd docs
 ./start_doc_server.sh
 ```
 
-# Setting up a development environment
+#  Local virtualenv development environment
 
-There are three ways to setup an Apache Airflow development environment:
-
-* [Local virtualenv development environment](#local-virtualenv-development-environment)
-  using tools and libraries directly on your system
-* [Docker container development environment](#docker-container-development-environment)
-  using simple manually managed docker container
-* [Integration test development environment](#integration-test-development-environment)
-  using Docker compose based environment - the same that we use to run integration tests in Travis CI
-
-##  Local virtualenv development environment
-
-You can create local virtualenv with all requirements required by Airflow.
+When you develop Airflow you can create local virtualenv with all requirements required by Airflow.
 
 Advantage of local installation is that everything works locally, you do not have to enter Docker/container
 environment and you can easily debug the code locally. You can also have access to python virtualenv that
@@ -163,10 +149,10 @@ require those components to be setup. Only real unit tests can be run bu default
 If you want to run integration tests, you need to configure and install the dependencies on your own.
 
 It's also very difficult to make sure that your local environment is consistent with other's environments.
-This  can often lead to "works for me" syndrome. It's better to use the Docker Compose integration test
+This can often lead to "works for me" syndrome. It's better to use the Docker Compose integration test
 environment in case you want reproducible environment consistent with other people.
 
-### Installation
+## Installation
 
 Install Python (3.5 or 3.6), MySQL, and libxml by using system-level package
 managers like yum, apt-get for Linux, or Homebrew for Mac OS at first.
@@ -194,24 +180,59 @@ the autocomplete and documentation support from IDE as well as you can
 debug and view the sources of Airflow - which is very helpful during
 development.
 
-### Running tests
+## Running individual tests
 
-To run tests locally, once you activate virtualenv you should be able to simply run
-``./run-tests`` at will. Note that if you want to pass extra parameters to nose
-you should do it after '--'
+Once you activate virtualenv (or enter docker container) as described below you should be able to run
+`run-tests` at will (it is in the path in Docker environment but you need to prepend it with `./` in local
+virtualenv (`./run-tests`). 
 
-For example, in order to just execute the "core" unit tests, run the following:
+Note that this script has several flags that can be useful for your testing.
+
+```text
+Usage: run-tests [FLAGS] [TESTS_TO_RUN] -- <EXTRA_NOSETEST_ARGS>
+
+Runs tests specified (or all tests if no tests are specified)
+
+Flags:
+
+-h, --help
+        Shows this help message.
+
+-i, --with-db-init
+        Forces database initialization before tests
+
+-s, --nocapture
+        Don't capture stdout when running the tests. This is useful if you are
+        debugging with ipdb and want to drop into console with it
+        by adding this line to source code:
+
+            import ipdb; ipdb.set_trace()
+
+-v, --verbose
+        Verbose output showing coloured output of tests being run and summary
+        of the tests - in a manner similar to the tests run in the CI environment.
+```
+
+You can pass extra parameters to nose, by adding nose arguments after `--`
+
+For example, in order to just execute the "core" unit tests and add ipdb set_trace method, you can 
+run the following command:
 
 ```bash
-./run-tests tests.core:CoreTest -- -s --logging-level=DEBUG
+./run-tests tests.core:CoreTest --nocapture --verbose
 ```
-or a single test method:
+
+or a single test method without colors or debug logs:
 
 ```bash
-./run-tests tests.core:CoreTest.test_check_operators -- -s --logging-level=DEBUG
+./run-tests tests.core:CoreTest.test_check_operators
 ```
+Note that `./run_tests` script runs tests but the first time it runs, ut performs database initialisation.
+If you run further tests without leaving the environment, the database will not be initialized, but you 
+can always force database initialization with `--with-db-init` (`-i`) switch. The scripts will
+inform you what you can do when they are run.
 
-### Running tests directly from the IDE
+## Running tests directly from the IDE
 
 Once you configure your tests to use the virtualenv you created. running tests
 from IDE is as simple as:
@@ -222,113 +243,9 @@ Note that while most of the tests are typical "unit" tests that do not
 require external components, there are a number of tests that are more of
 "integration" ot even "system" tests (depending on the convention you use).
 Those tests interact with external components. For those tests
-you need to run complete Docker Compose - based
-[Integration test development environment](#integration-test-development-environment).
+you need to run complete Docker Compose - base environment below.
 
-## Docker container development environment
-
-You can develop and run unit tests by using simple, manually managed docker container environment.
-
-Advantage of Docker container is that your development environment is isolated from other development
-environments you have and you can run quickly unit tests without messing with your local dependencies and
-installation.
-
-The disadvantage is that you you cannot run tests that require
-external components - mysql, postgres database, hadoop, mongo, cassandra, redis etc..
-The tests in Airflow are a mixture of unit and integration tests and some of them
-require those components to be setup. Only real unit tests can be run here.
-
-Also by default you have to start docker container airflow every time you want to run it.
-You can persist the installation of airflow in your containers but this is fairly manual process.
-
-### Installation
-
-There are those prerequisites that you have to fulfill:
-
-* Docker Community Edition installed and on the PATH. It should be
-  configured to be able to run `docker` commands directly and not only via root user
-  - your user should be in `docker` group. See [Docker installation guide](https://docs.docker.com/install/)
-
-Go to your Airflow directory and start a new docker container. You can choose between
-different versions of Python as base image - whatever you prefer. You can pick your own name
-for the container if you do not want the name to be randomly assigned by docker.
-
-```bash
-
-# Start docker in your Airflow directory
-docker run -t -i -v `pwd`:/airflow/ -w /airflow/ --name "airflow-3.6" python:3.6 bash
-
-# To install all of airflows dependencies to run all tests (this is a lot)
-pip install -e .
-
-# To run only certain tests install the devel requirements and whatever is required
-# for your test.  See setup.py for the possible requirements. For example:
-pip install -e '.[gcp,devel]'
-
-# Init the database
-airflow initdb
-```
-
-Then while you are in the container you can run the tests with nosetests:
-
-```
-nosetests -v tests/hooks/test_druid_hook.py
-
-  test_get_first_record (tests.hooks.test_druid_hook.TestDruidDbApiHook) ... ok
-  test_get_records (tests.hooks.test_druid_hook.TestDruidDbApiHook) ... ok
-  test_get_uri (tests.hooks.test_druid_hook.TestDruidDbApiHook) ... ok
-  test_get_conn_url (tests.hooks.test_druid_hook.TestDruidHook) ... ok
-  test_submit_gone_wrong (tests.hooks.test_druid_hook.TestDruidHook) ... ok
-  test_submit_ok (tests.hooks.test_druid_hook.TestDruidHook) ... ok
-  test_submit_timeout (tests.hooks.test_druid_hook.TestDruidHook) ... ok
-  test_submit_unknown_response (tests.hooks.test_druid_hook.TestDruidHook) ... ok
-
-  ----------------------------------------------------------------------
-  Ran 8 tests in 3.036s
-
-  OK
-```
-
-The Airflow code is mounted inside of the Docker container, so if you change something using your
-favorite IDE, you can directly test it in the container.
-
-You can persist your container so that you do not have to run install every time you enter the
-environment. You can do it after you exit the container environment.
-
-```bash
-docker commit "airflow-3.6" "local-aiflow:3.6"
-```
-
-You can choose your own image label/tag to save the image as. Then you can enter back the environment with:
-
-```bash
-docker run -t -i -v $(pwd):/airflow/ -w /airflow/ "local-airflow:3.6" bash
-```
-
-### Running tests
-Once you enter docker container you should be able to simply run
-`run-tests` at will (it is in the path). Note that if you want to pass extra parameters to nose
-you should do it after '--'
-
-For example, in order to just execute the "core" unit tests, run the following:
-```bash
-run-tests tests.core:CoreTest -- -s --logging-level=DEBUG
-```
-or a single test method:
-```bash
-run-tests tests.core:CoreTest.test_check_operators -- -s --logging-level=DEBUG
-```
-or another example:
-```
-run-tests tests.contrib.operators.test_dataproc_operator:DataprocClusterCreateOperatorTest.test_create_cluster_deletes_error_cluster  -s --logging-level=DEBUG
-```
-
-Note that `./run_tests` script runs tests but performs database initialisation first.
-You can skip the database initialisation part with `--skip-db-init` (`-s`) flag. This is
-extremely helpful when you run the test several times without resetting the database.
-
-
-## Integration test development environment
+# Integration test development environment
 
 This is environment that is used during CI builds on Travis CI. We have scripts to reproduce the
 Travis environment and you can enter the environment and run it locally.
@@ -336,12 +253,13 @@ Travis environment and you can enter the environment and run it locally.
 The scripts used by Travis CI run also image builds which make the images contain all the sources. You can
 see which scripts are used in [.travis.yml](.travis.yml) file.
 
-### Prerequisites
+## Prerequisites
 
-#### Docker
+**Docker**
+
 You need to have [Docker CE](https://docs.docker.com/get-started/) installed.
 
-**IMPORTANT!!!** : Mac OS Docker default Disk size settings
+IMPORTANT!!! : Mac OS Docker default Disk size settings
 
 When you develop on Mac OS you usually have not enough disk space for Docker if you start using it seriously.
 You should increase disk space available before starting to work with the environment. Usually you have weird
@@ -354,9 +272,9 @@ disk space available for Docker on Mac.
 At least 128 GB of Disk space is recommended. You can also get by with smaller space but you should more often
 clean the docker disk space periodically.
 
-#### Getopt and coreutils
+**Getopt and coreutils**
 
-**If you are on MacOS:**
+If you are on MacOS:
 
 * Run `brew install gnu-getopt coreutils` (if you use brew, or use equivalent command for ports)
 * Then (with brew) link the gnu-getopt to become default as suggested by brew by typing.
@@ -366,93 +284,13 @@ echo 'export PATH=\"/usr/local/opt/gnu-getopt/bin:\$PATH\"' >> ~/.bash_profile"
 ```
 * Login and logout afterwards
 
-**If you are on Linux:**
+If you are on Linux:
 
 * Run `apt install util-linux coreutils` or equivalent if your system is not Debian-based.
 
-### Building the images for the first time
+## Using the Docker Compose environment
 
-You can start using the environment only after building the local CI images (using
-[scripts/ci/local_ci_build.sh](scripts/ci/local_ci_build.sh). 
-
-Note that building image first time pulls the pre-built version of image from Dockerhub based on master 
-sources and rebuilds the layers that need to be rebuilt - because they changed in local sources. 
-This might take a bit of time when you run it for the first time and when you add new dependencies - 
-but rebuilding the image should be an operation done quite rarely (mostly when you start seeing some
-unknown problems and want to refresh the environment).
- 
-Once you performed the first build, the images are rebuilt locally rather than pulled unless you 
-force pull the images.
-
-### Force pulling the images
-
-You can force-pull the images before building it locally so that you are sure that you download
-latest images from DockerHub repository before building. This can be done with
-[scripts/ci/local_ci_pull_and_build.sh](scripts/ci/local_ci_pull_and_build.sh) script.
-
-### Cleaning up cached Docker images/containers
-
-Note that you might need to cleanup your Docker environment from time to time. The images are quite big
-(1.5GB for both images needed for static code analysis and CI tests). And if you often rebuild/update
-images you might end up with some unused image data.
-
-Cleanup can be performed with `docker system prune` command. In case you have huge problems with disk space
-and want to clean-up all image data you can run `docker system prune --all`
-
-If on Mac OS you nd up with not enough disk space for Docker you should increase disk space
-available for Docker. See [Docker for Mac - Space](https://docs.docker.com/docker-for-mac/space/) for details.
-
-### Troubleshooting
-
-In case you have problems with the environment try the following:
-
-1. [Stop the environment](#stopping-the-environment)
-2. [Force pull the images](#force-pulling-the-images)
-3. [Clean Up Docker engine](#cleaning-up-cached-docker-imagescontainers)
-4. Remove and re-install Docker CE,then [force pull the images](#force-pulling-the-images)
-
-In case the problems are not solved, you can set VERBOSE variable to "true" (`export VERBOSE="true"`)
-and rerun failing command, and copy&paste the output from your terminal, describe the problem and 
-post it in [Airflow Slack](https://apache-airflow-slack.herokuapp.com/) #troubleshooting channel.
-
-### Using the environment
-
-For your convenience, there are scripts that can be used in local development
-- where local host sources are mounted to within the docker container.
-Those "local" scripts starts with "local_" prefix in [scripts/ci](scripts/ci) folder and
-they run Docker-Compose environment with relevant backends (mysql/postgres)
-and additional services started.
-
-#### Running the whole suite of tests
-
-Default settings (python 3.6, sqlite backend, docker environment):
-
-```bash
-./scripts/ci/local_ci_run_airflow_testing.sh
-```
-
-Selecting python version, backend, docker environment:
-
-```bash
-PYTHON_VERSION=3.5 BACKEND=postgres ENV=docker ./scripts/ci/local_ci_run_airflow_testing.sh
-```
-
-Running kubernetes tests:
-```bash
-KUBERNETES_VERSION==v1.13.0 BACKEND=postgres ENV=kubernetes ./scripts/ci/local_ci_run_airflow_testing.sh
-```
-
-* PYTHON_VERSION might be one of 3.5/3.6
-* BACKEND might be one of postgres/sqlite/mysql
-* ENV might be one of docker/kubernetes
-* KUBERNETES_VERSION - required for Kubernetes tessts - currently KUBERNETES_VERSION=v1.13.0.
-
-The kubernetes env might not work locally as easily as other tests because it requires your host
-to be setup properly (specifically it installs minikube cluster locally on your host and depending 
-on your machine setting it might or might not work out of the box.
-We are working on making the kubernetes tests more easily reproducible locally in the future.
-
-#### Entering bash in the environment
+### Entering bash shell in Docker Compose environment
 
 Default environment settings (python 3.6, sqlite backend, docker environment)
 ```bash
@@ -465,15 +303,12 @@ Overriding default environment settings:
 PYTHON_VERSION=3.5 BACKEND=postgres ENV=docker ./scripts/ci/local_ci_enter_environment.sh
 ```
 
-Once you are inside the environment you can run tests as described in [Running tests](#running-tests)
+### Running individual tests within the container
 
-#### Stopping the environment
+Once you are inside the environment you can run individual tests as described in
+[Running individual tests](#running-individual-tests).
 
-Docker-compose environment starts a number of docker containers and keep them running.
-You can tear them down by running 
-[/scripts/ci/local_ci_stop_environment.sh](scripts/ci/local_ci_stop_environment.sh)
-
-### Running static code analysis locally
+### Running static code analysis
 
 NOTE!!! Those scripts for static code analysis are supposed to be run from the host not inside the container
 They will fail if you try to rune them inside the container with appropriate error message.
@@ -503,8 +338,8 @@ built.
 Documentation after it is built, is available in [docs/_build/html](docs/_build/html) folder.
 This folder is mounted from the host so you can access those files in your host as well.
 
-If you are already in the [Docker Compose Environment](#entering-bash-in-the-environment) you can also 
-run the same static checks from within container:
+If you are already in the [Docker Compose Environment](#entering-bash-shell-in-docker-compose-environment)
+you can also run the same static checks from within container:
 
 * Mypy: `./scripts/ci/in_container/run_mypy.sh airflow tests`
 * Pylint: `./scripts/ci/in_container/run_pylint.sh`
@@ -533,7 +368,101 @@ or
 
 And similarly for other scripts.
 
-### Pylint checks (work in-progress)
+## Automation of image building
+
+When you run tests or enter environment (see below) the first time you do it, the local image will be
+pulled and build for you automatically.
+
+Note that building image first time pulls the pre-built version of image from Dockerhub based on master 
+sources and rebuilds the layers that need to be rebuilt - because they changed in local sources. 
+This might take a bit of time when you run it for the first time and when you add new dependencies - 
+but rebuilding the image should be an operation done quite rarely (mostly when you start seeing some
+unknown problems and want to refresh the environment). See [Troubleshootin section](#troubleshooting).
+ 
+Once you performed the first build, the images are rebuilt locally rather than pulled unless you 
+force pull the images. But you can force it using the scripts described below.
+
+## Local Docker Compose scripts
+
+For your convenience, there are scripts that can be used in local development
+- where local host sources are mounted to within the docker container.
+Those "local" scripts starts with "local_" prefix in [scripts/ci](scripts/ci) folder and
+they run Docker-Compose environment with relevant backends (mysql/postgres)
+and additional services started.
+
+### Running the whole suite of tests
+
+Running all tests with default settings (python 3.6, sqlite backend, docker environment):
+
+```bash
+./scripts/ci/local_ci_run_airflow_testing.sh
+```
+
+Selecting python version, backend, docker environment:
+
+```bash
+PYTHON_VERSION=3.5 BACKEND=postgres ENV=docker ./scripts/ci/local_ci_run_airflow_testing.sh
+```
+
+Running kubernetes tests:
+```bash
+KUBERNETES_VERSION==v1.13.0 BACKEND=postgres ENV=kubernetes ./scripts/ci/local_ci_run_airflow_testing.sh
+```
+
+* PYTHON_VERSION might be one of 3.5/3.6
+* BACKEND might be one of postgres/sqlite/mysql
+* ENV might be one of docker/kubernetes
+* KUBERNETES_VERSION - required for Kubernetes tessts - currently KUBERNETES_VERSION=v1.13.0.
+
+The kubernetes env might not work locally as easily as other tests because it requires your host
+to be setup properly (specifically it installs minikube cluster locally on your host and depending 
+on your machine setting it might or might not work out of the box.
+We are working on making the kubernetes tests more easily reproducible locally in the future.
+
+### Stopping the environment
+
+Docker-compose environment starts a number of docker containers and keep them running.
+You can tear them down by running 
+[/scripts/ci/local_ci_stop_environment.sh](scripts/ci/local_ci_stop_environment.sh)
+
+### Building the images
+
+You can manually trigger building of the local CI image using
+[scripts/ci/local_ci_build.sh](scripts/ci/local_ci_build.sh). 
+
+
+### Force pulling the images
+
+You can later force-pull the images before building it locally so that you are sure that you download
+latest images from DockerHub repository before building. This can be done with
+[scripts/ci/local_ci_pull_and_build.sh](scripts/ci/local_ci_pull_and_build.sh) script.
+
+## Cleaning up cached Docker images/containers
+
+Note that you might need to cleanup your Docker environment from time to time. The images are quite big
+(1.5GB for both images needed for static code analysis and CI tests). And if you often rebuild/update
+images you might end up with some unused image data.
+
+Cleanup can be performed with `docker system prune` command. In case you have huge problems with disk space
+and want to clean-up all image data you can run `docker system prune --all`
+
+If on Mac OS you nd up with not enough disk space for Docker you should increase disk space
+available for Docker. See [Docker for Mac - Space](https://docs.docker.com/docker-for-mac/space/) for details.
+
+## Troubleshooting
+
+In case you have problems with the Docker Compose environment - try the following:
+
+1. [Stop the environment](#stopping-the-environment)
+2. [Force pull the images](#force-pulling-the-images)
+3. [Clean Up Docker engine](#cleaning-up-cached-docker-imagescontainers)
+4. Remove and re-install Docker CE,then [force pull the images](#force-pulling-the-images)
+
+In case the problems are not solved, you can set VERBOSE variable to "true" (`export VERBOSE="true"`)
+and rerun failing command, and copy&paste the output from your terminal, describe the problem and 
+post it in [Airflow Slack](https://apache-airflow-slack.herokuapp.com/) #troubleshooting channel.
+
+# Pylint checks (work in-progress)
 
 Note that for pylint we are in the process of fixing pylint code checks for the whole Airflow code. This is
 a huge task so we implemented an incremental approach for the process. Currently most of the code is
@@ -573,7 +502,7 @@ class LoginForm(Form):
 # pylint: enable=too-few-public-methods
 ```
 
-### Git hooks
+# Git hooks
 
 Another great way of automating linting and testing is to use
  [Git Hooks](https://git-scm.com/book/uz/v2/Customizing-Git-Git-Hooks). For example you could create a
@@ -635,7 +564,7 @@ See also the list of test classes and methods in `tests/core.py`.
 
 Feel free to customize based on the extras available in [setup.py](./setup.py)
 
-## Pull Request Guidelines
+# Pull Request Guidelines
 
 Before you submit a pull request from your forked repo, check that it
 meets these guidelines:
@@ -665,7 +594,7 @@ idea to run tests locally before opening PR.
 1. Please read this excellent [article](http://chris.beams.io/posts/git-commit/) on commit messages and
 adhere to them. It makes the lives of those who come after you a lot easier.
 
-### Testing on Travis CI
+# Testing on Travis CI
 
 We currently rely heavily on Travis CI for running the full Airflow test suite
 as running all of the tests locally requires significant setup.  You can setup
@@ -678,7 +607,7 @@ setup as separate components on GitHub:
 1. **Travis CI GitHub App** (new version)
 1. **Travis CI GitHub Services** (legacy version)
 
-#### Travis CI GitHub App (new version)
+## Travis CI GitHub App (new version)
 
 1. Once installed, you can configure the Travis CI GitHub App at
 https://github.com/settings/installations -> Configure Travis CI.
@@ -690,7 +619,7 @@ repositories" for convenience, or "Only select repositories" and choose
 1. You can access Travis CI for your fork at
 `https://travis-ci.com/<username>/airflow`.
 
-#### Travis CI GitHub Services (legacy version)
+## Travis CI GitHub Services (legacy version)
 
 The Travis CI GitHub Services versions uses an Authorized OAuth App.  Note
 that `apache/airflow` is currently still using the legacy version.
@@ -707,7 +636,7 @@ forked `<organization>/airflow` repo even though it is public.
 1. You can access Travis CI for your fork at
 `https://travis-ci.org/<organization>/airflow`.
 
-#### Prefer travis-ci.com over travis-ci.org
+## Prefer travis-ci.com over travis-ci.org
 
 The travis-ci.org site for open source projects is now legacy and new projects
 should instead be created on travis-ci.com for both private repos and open
@@ -730,8 +659,7 @@ More information:
 [travis-ci-open-source]: https://docs.travis-ci.com/user/open-source-on-travis-ci-com/
 [travis-ci-org-vs-com]: https://devops.stackexchange.com/a/4305/8830
 
-
-### Changing the Metadata Database
+# Changing the Metadata Database
 
 When developing features the need may arise to persist information to the the
 metadata database. Airflow has [Alembic](https://bitbucket.org/zzzeek/alembic)
@@ -749,21 +677,21 @@ $ alembic revision -m "add new field to db"
 ~/airflow/airflow/migrations/versions/12341123_add_new_field_to_db.py
 ```
 
-## Setting up the node / npm javascript environment
+# Setting up the node / npm javascript environment
 
 `airflow/www/` contains all npm-managed, front end assets.
 Flask-Appbuilder itself comes bundled with jQuery and bootstrap.
 While these may be phased out over time, these packages are currently not
 managed with npm.
 
-### Node/npm versions
+## Node/npm versions
 
 Make sure you are using recent versions of node and npm. No problems have been found with node>=8.11.3 and
 npm>=6.1.3
 
-### Using npm to generate bundled files
+## Using npm to generate bundled files
 
-#### npm
+### npm
 
 First, npm must be available in your environment. If you are on Mac and it is not installed,
 you can run the following commands (taken from [this source](https://gist.github.com/DanHerbert/9520689)):
@@ -784,7 +712,7 @@ export PATH="$HOME/.npm-packages/bin:$PATH"
 You can also follow
 [the general npm installation instructions](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 
-#### npm packages
+### npm packages
 
 To install third party libraries defined in `package.json`, run the
 following within the `airflow/www/` directory which will install them in a
@@ -809,12 +737,12 @@ npm run prod
 npm run dev
 ```
 
-#### Upgrading npm packages
+### Upgrading npm packages
 
 Should you add or upgrade a npm package, which involves changing `package.json`, you'll need to re-run `npm install`
 and push the newly generated `package-lock.json` file so we get the reproducible build.
 
-#### Javascript Style Guide
+### Javascript Style Guide
 
 We try to enforce a more consistent style and try to follow the JS community guidelines.
 Once you add or modify any javascript code in the project, please make sure it follows the guidelines
