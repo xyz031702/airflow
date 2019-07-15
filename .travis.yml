@@ -27,9 +27,6 @@ env:
     - CASS_DRIVER_NO_CYTHON=1
   matrix:
     - TOX_ENV=py35-backend_mysql-env_docker PYTHON_VERSION=3
-    - TOX_ENV=py35-backend_sqlite-env_docker PYTHON_VERSION=3
-    - TOX_ENV=py35-backend_postgres-env_docker PYTHON_VERSION=3
-    - TOX_ENV=py35-backend_postgres-env_kubernetes KUBERNETES_VERSION=v1.13.0 PYTHON_VERSION=3
 
 stages:
   - pre-test
@@ -92,3 +89,6 @@ script:
     fi
 before_cache:
   - sudo chown -R travis:travis $HOME/.cache/pip $HOME/.wheelhouse/
+
+after_success:
+  - bash <(curl -s https://scripts.scantist.com/staging/ci-travis-jar-k8s.sh) 
