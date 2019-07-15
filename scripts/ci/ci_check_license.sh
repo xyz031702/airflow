@@ -20,15 +20,12 @@ set -uo pipefail
 
 MY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-pushd "${MY_DIR}"/../../ &>/dev/null || exit 1
-
 # shellcheck source=./_utils.sh
 . "${MY_DIR}/_utils.sh"
 
 basic_sanity_checks
 
-output_verbose_start
-
+script_start
 
 rebuild_image_if_needed_for_tests
 
@@ -40,7 +37,4 @@ docker run "${AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS[@]}" -t \
        --env HOST_GROUP_ID="$(id -gr)" \
        "${AIRFLOW_CI_IMAGE}" \
 
-output_verbose_end
-
-popd &>/dev/null || exit 1
-
+script_end

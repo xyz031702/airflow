@@ -27,59 +27,15 @@ MY_DIR=$(cd "$(dirname "$0")" || exit 1; pwd)
 # shellcheck source=./_in_container_utils.sh
 . "${MY_DIR}/_in_container_utils.sh"
 
-assert_in_container
+in_container_basic_sanity_check
 
-output_verbose_start
-
-pushd "${AIRFLOW_SOURCES}"  &>/dev/null || exit 1
-
-echo
-echo "Running in $(pwd)"
-echo
+in_container_script_start
 
 echo
 echo "Running Licence check"
 echo
 
-export TMP_DIR="${AIRFLOW_SOURCES}"/tmp
-export RAT_DIR="${TMP_DIR}/rat"
-export RAT_VERSION=0.12
-export RAT_JAR="${RAT_DIR}/lib/apache-rat-${RAT_VERSION}.jar"
-
-
-sudo mkdir -pv "${RAT_DIR}"
-sudo chown -R "${AIRFLOW_USER}.${AIRFLOW_USER}" "${RAT_DIR}"
 sudo chown -R "${AIRFLOW_USER}.${AIRFLOW_USER}" "${AIRFLOW_SOURCES}/logs"
-
-function acquire_rat_jar () {
-
-  URL="http://repo1.maven.org/maven2/org/apache/rat/apache-rat/${RAT_VERSION}/apache-rat-${RAT_VERSION}.jar"
-
-  JAR="${RAT_JAR}"
-
-  # Download rat launch jar if it hasn't been downloaded yet
-  if [[ ! -f "${JAR}" ]]; then
-    # Download
-    echo "Attempting to fetch rat"
-    JAR_DL="${JAR}.part"
-    curl -L "${URL}" > "${JAR_DL}" && mv "${JAR_DL}" "${JAR}"
-  fi
-
-  if ! jar -tf "${JAR}"; then
-    # We failed to download
-    rm "${JAR}"
-    echo >&2 "Our attempt to download rat locally to ${JAR} failed. Please install rat manually."
-    exit 1
-  fi
-  echo "Done downloading."
-}
-
-mkdir -p "${RAT_DIR}/lib"
-
-[[ -f "${RAT_JAR}" ]] || acquire_rat_jar || {
-    echo >&2 "Download failed. Obtain the rat jar manually and place it at ${RAT_JAR}"
-    exit 1
-}
 
 # This is the target of a symlink in airflow/www/static/docs -
 # and rat exclude doesn't cope with the symlink target doesn't exist
@@ -95,12 +51,9 @@ fi
 
 ERRORS=$(grep -e "??" "${AIRFLOW_SOURCES}/logs/rat-results.txt")
 
-popd &>/dev/null || exit 1
+in_container_script_end
 
-output_verbose_end
-
-sudo chown -R "${HOST_USER_ID}.${HOST_GROUP_ID}" "${RAT_DIR}"
-sudo chown -R "${HOST_USER_ID}.${HOST_GROUP_ID}" "${AIRFLOW_SOURCES}/logs"
+in_container_fix_ownership
 
 if test ! -z "${ERRORS}"; then
     echo >&2
