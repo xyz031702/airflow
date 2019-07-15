@@ -398,6 +398,10 @@ WORKDIR ${AIRFLOW_SOURCES}
 
 ENV PATH="${HOME}:${PATH}"
 
+# Disable writing .pyc files - slightly slower imports but not messing around when switching
+# Python version and avoids problems with root-owned .pyc files in host
+ENV PYTHONDONTWRITEBYTECODE="true"
+
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/entrypoint.sh"]

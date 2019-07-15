@@ -93,10 +93,6 @@ export PYTHONPATH=${PYTHONPATH:-${AIRFLOW_SOURCES}/tests/test_utils}
 # Added to have run-tests on path
 export PATH=${PATH}:${AIRFLOW_SOURCES}
 
-# Disable writing .pyc files - slightly slower imports but not messing around when switching
-# Python version
-export PYTHONDONTWRITEBYTECODE="true"
-
 export AIRFLOW__CORE__UNIT_TEST_MODE=True
 export HADOOP_DISTRO
 
