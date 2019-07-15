@@ -18,28 +18,28 @@ version: "2.2"
 services:
   airflow-testing:
     volumes:
-      - ../../airflow:/opt/airflow/airflow
-      - ../../setup.cfg:/opt/airflow/setup.cfg
-      - ../../setup.py:/opt/airflow/setup.py
-      - ../../dags:/opt/airflow/dags
-      - ../../dev:/opt/airflow/dev
-      - ../../docs:/opt/airflow/docs
-      - ../../hooks:/opt/airflow/hooks
-      - ../../scripts:/opt/airflow/scripts
-      - ../../tests:/opt/airflow/tests
-      - ../../.coveragerc:/opt/airflow/.coveragerc
-      - ../../LICENSE:/opt/airflow/LICENSE
-      - ../../MANIFEST.in:/opt/airflow/MANIFEST.in
-      - ../../NOTICE:/opt/airflow/NOTICE
-      - ../../CHANGELOG.txt:/opt/airflow/CHANGELOG
-      - ../../.github:/opt/airflow/.github
-      - ../../.flake8:/opt/airflow/.flake8
-      - ../../pylintrc:/opt/airflow/pylintrc
-      - ../../.rat-excludes:/opt/airflow/.rat-excludes
-      - ../../run-tests:/opt/airflow/run-tests
-      - ../../logs:/root/airflow/logs
-      - ../../logs:/opt/airflow/logs
-      - ../../tmp:/opt/airflow/tmp
+      - ../../airflow:/opt/airflow/airflow:cached
+      - ../../setup.cfg:/opt/airflow/setup.cfg:cached
+      - ../../setup.py:/opt/airflow/setup.py:cached
+      - ../../dags:/opt/airflow/dags:cached
+      - ../../dev:/opt/airflow/dev:cached
+      - ../../docs:/opt/airflow/docs:cached
+      - ../../hooks:/opt/airflow/hooks:cached
+      - ../../scripts:/opt/airflow/scripts:cached
+      - ../../tests:/opt/airflow/tests:cached
+      - ../../.coveragerc:/opt/airflow/.coveragerc:cached
+      - ../../LICENSE:/opt/airflow/LICENSE:cached
+      - ../../MANIFEST.in:/opt/airflow/MANIFEST.in:cached
+      - ../../NOTICE:/opt/airflow/NOTICE:cached
+      - ../../CHANGELOG.txt:/opt/airflow/CHANGELOG:cached
+      - ../../.github:/opt/airflow/.github:cached
+      - ../../.flake8:/opt/airflow/.flake8:cached
+      - ../../pylintrc:/opt/airflow/pylintrc:cached
+      - ../../.rat-excludes:/opt/airflow/.rat-excludes:cached
+      - ../../run-tests:/opt/airflow/run-tests:cached
+      - ../../logs:/root/airflow/logs:cached
+      - ../../logs:/opt/airflow/logs:cached
+      - ../../tmp:/opt/airflow/tmp:cached
     environment:
       - HOST_USER_ID
       - HOST_GROUP_ID

@@ -47,20 +47,20 @@ if [[ ${AIRFLOW_MOUNT_HOST_VOLUMES_FOR_STATIC_CHECKS} == "true" ]]; then
     echo "Mounting host volumes to Docker"
     echo
     AIRFLOW_CONTAINER_EXTRA_DOCKER_FLAGS=( \
-      "-v" "${AIRFLOW_SOURCES}/airflow:/opt/airflow/airflow" \
-      "-v" "${AIRFLOW_SOURCES}/.mypy_cache:/opt/airflow/.mypy_cache" \
-      "-v" "${AIRFLOW_SOURCES}/dev:/opt/airflow/dev" \
-      "-v" "${AIRFLOW_SOURCES}/docs:/opt/airflow/docs" \
-      "-v" "${AIRFLOW_SOURCES}/scripts:/opt/airflow/scripts" \
-      "-v" "${AIRFLOW_SOURCES}/tmp:/opt/airflow/tmp" \
-      "-v" "${AIRFLOW_SOURCES}/tests:/opt/airflow/tests" \
-      "-v" "${AIRFLOW_SOURCES}/.flake8:/opt/airflow/.flake8" \
-      "-v" "${AIRFLOW_SOURCES}/setup.cfg:/opt/airflow/setup.cfg" \
-      "-v" "${AIRFLOW_SOURCES}/setup.py:/opt/airflow/setup.py" \
-      "-v" "${AIRFLOW_SOURCES}/.rat-excludes:/opt/airflow/.rat-excludes" \
-      "-v" "${AIRFLOW_SOURCES}/logs:/opt/airflow/logs" \
-      "-v" "${AIRFLOW_SOURCES}/logs:/root/logs" \
-      "-v" "${AIRFLOW_SOURCES}/tmp:/opt/airflow/tmp" \
+      "-v" "${AIRFLOW_SOURCES}/airflow:/opt/airflow/airflow:cached" \
+      "-v" "${AIRFLOW_SOURCES}/.mypy_cache:/opt/airflow/.mypy_cache:cached" \
+      "-v" "${AIRFLOW_SOURCES}/dev:/opt/airflow/dev:cached" \
+      "-v" "${AIRFLOW_SOURCES}/docs:/opt/airflow/docs:cached" \
+      "-v" "${AIRFLOW_SOURCES}/scripts:/opt/airflow/scripts:cached" \
+      "-v" "${AIRFLOW_SOURCES}/tmp:/opt/airflow/tmp:cached" \
+      "-v" "${AIRFLOW_SOURCES}/tests:/opt/airflow/tests:cached" \
+      "-v" "${AIRFLOW_SOURCES}/.flake8:/opt/airflow/.flake8:cached" \
+      "-v" "${AIRFLOW_SOURCES}/setup.cfg:/opt/airflow/setup.cfg:cached" \
+      "-v" "${AIRFLOW_SOURCES}/setup.py:/opt/airflow/setup.py:cached" \
+      "-v" "${AIRFLOW_SOURCES}/.rat-excludes:/opt/airflow/.rat-excludes:cached" \
+      "-v" "${AIRFLOW_SOURCES}/logs:/opt/airflow/logs:cached" \
+      "-v" "${AIRFLOW_SOURCES}/logs:/root/logs:cached" \
+      "-v" "${AIRFLOW_SOURCES}/tmp:/opt/airflow/tmp:cached" \
       "-t"
     )
 else
