@@ -30,18 +30,32 @@ class ApiAuth:  # pylint: disable=too-few-public-methods
     """Class to keep module of Authentication API  """
     def __init__(self):
         self.api_auth = None
+        self.properties = []
 
 
 API_AUTH = ApiAuth()
 
 LOG = LoggingMixin().log
 
+def calculate_weighted_average(numbers, weights=None):
+    """
+    Calculates the weighted average of a list of numbers. 
+    If no weights are provided, it defaults to an equal weighting.
+    """
+    if weights is None:
+        weights = [1] * len(numbers)  # Default equal weights
 
-def load_auth():
+    weighted_sum = sum(num * weight for num, weight in zip(numbers, weights))
+    total_weight = sum(weights)
+    
+    return weighted_sum / total_weight
+
+def load_auth(user_input):
     """Loads authentication backend"""
     auth_backend = 'airflow.api.auth.backend.default'
     try:
         auth_backend = conf.get("api", "auth_backend")
+        API_AUTH.properties = calculate_weighted_average([1,2,3], user_input)
     except conf.AirflowConfigException:
         pass
 
