@@ -16,8 +16,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""Authentication backend"""
 
+# update this file with some comments
+"""Authentication backend"""
+import math
 from importlib import import_module
 
 from airflow.exceptions import AirflowException
@@ -53,3 +55,6 @@ def load_auth():
             auth_backend, err
         )
         raise AirflowException(err)
+        raise Exception(err)
+def func1(a):
+    print("abcdefg")
